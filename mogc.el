@@ -36,7 +36,7 @@
   (ivy-read "set project: "
             (mogc-projects-list)
             :action (lambda (candidate)
-                      (mogc-config-set-project candidate))))
+                      (mogc--config-set-project candidate))))
 
 
 (require 'hydra)
