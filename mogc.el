@@ -15,7 +15,7 @@
 ;; and run it in a subprocess
 
 (require 'ivy)
-(defun mogc-config-active-project ()
+(defun mogc-config-get-project ()
   (interactive)
   (message (shell-command-to-string
             "echo -n $(gcloud config list --format 'value(core.project)')")))
@@ -40,7 +40,7 @@
     (mapc 'message roles-list)))
 
 
-(defun mogc-config-set-project-ivy ()
+(defun mogc-config-set-project ()
   (interactive)
   (ivy-read "set project: "
             (mogc-projects-list)
@@ -51,11 +51,11 @@
 
 (defhydra hydra-mogc ()
   "Moritz gcloud"
-  ("p" mogc-config-active-project "Get active project")
-  ("P" mogc-config-set-project-ivy "Set project")
+  ("p" mogc-config-get-project "Get active project")
+  ("P" mogc-config-set-project "Set project")
   ("q" nil "quit" :color blue))
 
-(defalias 'gpset 'mogc-config-set-project-ivy)
-(defalias 'gpget 'mogc-config-active-project)
+(defalias 'gpset 'mogc-config-set-project)
+(defalias 'gpget 'mogc-config-get-project)
 
 (provide 'mogc)
