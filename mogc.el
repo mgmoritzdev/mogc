@@ -77,11 +77,11 @@ with name, zone and status of a virtual machine"
     (with-current-buffer buffer
       (erase-buffer)
       (insert
-       (seq-reduce
+       (cl-reduce
         (lambda (a b)
           (concat a "\n" b))
         (mogc--get-list-from-command command "name,zone,status,networkInterfaces[0].networkIP,networkInterfaces[0].accessConfigs[0].natIP")
-        ""))
+        :initial-value ""))
       (goto-char (point-min))
       (delete-blank-lines))
     (switch-to-buffer-other-window buffer)))
