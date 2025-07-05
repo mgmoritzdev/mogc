@@ -16,14 +16,19 @@
 
 (require 'ivy)
 
-(defun mogc--get-list-from-command (command &optional column-name)
+(defun mogc--get-list-from-command (command &optional column-name filter &rest params)
   (let ((list-items (split-string
                      (shell-command-to-string
-                      (format "%s --quiet%s"
-                              command
-                              (if column-name
-                                  (format " --format=\"[no-heading](%s)\"" column-name)
-                                "")))
+                      (concat
+                       (format "%s --quiet%s %s"
+                               command
+                               (if column-name
+                                   (format " --format=\"[no-heading](%s)\"" column-name)
+                                 "")
+                               (if filter
+                                   (format "--filter=\"%s\"" filter)
+                                 ""))
+                       (mapconcat #'identity params " ")))
                      "\n")))
     (cl-remove-if
      (lambda (str)
@@ -39,6 +44,18 @@
 
 (defun mogc--compute-zones-list ()
   (mogc--get-list-from-command "gcloud compute zones list" "name"))
+
+(defun mogc--compute-regions-list ()
+  (mogc--get-list-from-command "gcloud compute regions list" "name"))
+
+(defun mogc--compute-images-list ()
+  (mogc--get-list-from-command "gcloud compute images list" "name"))
+
+(defun mogc--compute-machine-type-list (&optional zones)
+  (mogc--get-list-from-command "gcloud compute machine-types list" "name"
+                               nil
+                               (if zones
+                                   (format "--zones=\"%s\"" zones))))
 
 (defun mogc--config-set-project (name)
   "Start a Processing sketch"
@@ -140,6 +157,21 @@ with name, zone and status of a virtual machine"
             :action (lambda (candidate)
                       (mogc--config-set-project candidate))))
 
+(defun mogc-insert-machine-type (&optional zone)
+  "Get gcloud machine type from list and `insert' it
+ into buffer."
+  (interactive)
+  (let* ((zone (if zone
+                   zone
+                 "southamerica-east1-a"))
+         (machine-type-list (mogc--compute-machine-type-list "southamerica-east1-a")))
+    (ivy-read "Select the machine type: "
+              machine-type-list
+              :history 'gcloud-machine-type-history
+              :require-match t
+              :action 'insert
+              :caller 'mogc-insert-machine-type)))
+
 (require 'hydra)
 
 (defhydra hydra-mogc ()
@@ -147,7 +179,9 @@ with name, zone and status of a virtual machine"
   ("p" mogc-config-get-project "Get active project")
   ("u" mogc-compute-instances-start "Start Instance")
   ("d" mogc-compute-instances-stop "Stop Instance")
+  ("l" mogc-compute-instances-list "List Instances")
   ("P" mogc-config-set-project "Set project")
+  ("m" mogc-insert-machine-type "Insert machine type")
   ("q" nil "quit" :color blue))
 
 (defalias 'gpset 'mogc-config-set-project)
@@ -155,5 +189,6 @@ with name, zone and status of a virtual machine"
 (defalias 'gci-list 'mogc-compute-instances-list)
 (defalias 'gci-start 'mogc-compute-instances-start)
 (defalias 'gci-stop 'mogc-compute-instances-stop)
+(defalias 'gcmt-insert 'mogc-insert-machine-type)
 
 (provide 'mogc)
